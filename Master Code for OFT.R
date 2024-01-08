@@ -57,15 +57,17 @@ df <- data.frame()
 GameIds <- unique(Week_1$gameId)
 GameIds_Week_2 <- unique(Week_2$gameId)
 GameIds_Week_3 <- unique(Week_3$gameId)
-
+GameIds_Week_4<- unique(Week_4$gameId)
 # Distance Loop
+# Necessary changes in function below
+
 PlayLoop <- function(x) {
   
   
   
-  gid <- GameIds[[x]]
+  gid <- GameIds_Week_4[[x]]
   
-  game <- Week_1 %>%
+  game <- Week_4 %>%
     filter(gameId == gid) %>%
     select(everything())
   
@@ -73,13 +75,14 @@ PlayLoop <- function(x) {
   
   unique_playIds <- unique(game$playId)
   
-  
+#pid = 55
   for (pid in unique_playIds) {
     #for (pid in 1126) {
     play <- filter(game, playId == pid)
     
     # Loop through unique frameIds within the play
     unique_frameIds <- unique(play$frameId)
+    #fid = 2
     for (fid in unique_frameIds) {
       
       frame <- filter(play, frameId == fid) %>%
@@ -117,13 +120,10 @@ PlayLoop <- function(x) {
 }
 
 
-length(GameIds)
+
 library(parallel)
 # Applying function
-DF <- mclapply(1:length(GameIds),function(x) PlayLoop(x),mc.cores = 2)
-
-DF[[length(GameIds)]]
-
+DF <- mclapply(1:length(GameIds_Week_4),function(x) PlayLoop(x),mc.cores = 2)
 
 
 #attach tackle info
@@ -151,17 +151,17 @@ GetOpenField <- function(x) {
   
   Missed_Tackles <- Tackles %>%
     filter(pff_missedTackle == 1,
-           gameId == GameIds[x] ) %>%
+           gameId == GameIds_Week_3[x] ) %>%
     mutate(helper = paste0(gameId,playId))
   
   # Identifying Made Tackles from the game from the calculated distance output
   Made_Tackles <- Tackles %>%
     filter(tackle == 1,
-           gameId == GameIds[x]) %>%
+           gameId == GameIds_Week_3[x]) %>%
     mutate(helper = paste0(gameId,playId))
   
   
-  PlayDF <- Plays %>% filter(gameId == GameIds[x])
+  PlayDF <- Plays %>% filter(gameId == GameIds_Week_3[x])
   i <- 1
   
   df <- DF[[x]] %>%
@@ -213,7 +213,8 @@ GetOpenField <- function(x) {
       # This in theory should give us the frame where the ball carrier and tackler
       # are closest to each other.
       mydata_tackler <- mydata_tackler %>%
-        filter(mydata_tackler[7] == min(mydata_tackler[7]))
+        filter(mydata_tackler[7] == min(mydata_tackler[7])) %>% 
+        slice(1)
       
       # Getting frame of where the ball carrier and tackler
       # are closest to each other.
@@ -291,7 +292,8 @@ GetOpenField <- function(x) {
         filter(!is.na(missed_tackler_name))
       
       mydata_missed_tackler <- mydata_missed_tackler %>%
-        filter(mydata_missed_tackler[7] == min(mydata_missed_tackler[7]))
+        filter(mydata_missed_tackler[7] == min(mydata_missed_tackler[7])) %>% 
+        slice(1)
       
       unique_missed_tackle_frame <- unique(mydata_missed_tackler$frameId)
       
@@ -336,14 +338,17 @@ GetOpenField <- function(x) {
   return(Open_Field_DF_3)
 }
 
-DF2 <- mclapply(1:length(GameIds),function(x) GetOpenField(x),mc.cores = 4)
+
+
+
+DF2 <- mclapply(1:length(GameIds_Week_3),function(x) GetOpenField(x),mc.cores = 2)
 
 
 # Creating DF for Output
-Week_1_Output <- data.frame(do.call(rbind, DF2))
+Week_3_Output <- data.frame(do.call(rbind, DF2))
 
 # Writing to CSV to have backup for when function reruns
-write.csv(Week_1_Output, file = "/Users/staci/Downloads/2024 NFL Data Bowl/Week_1_Output.csv",row.names = FALSE)
+write.csv(Week_3_Output, file = "/Users/staci/Downloads/2024 NFL Data Bowl/Week_3_Output.csv",row.names = FALSE)
 
 
 # This step can all be added on once we have all weeks
